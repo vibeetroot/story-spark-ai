@@ -31,7 +31,7 @@ const NavListComponent: React.FC<INavListComponentProps> = ({
             <a href="/">
               <img src={logo} alt="logo" width={50} height={50} />
             </a>
-            <a href="/" className="text-gray-400 hover:text-custom transition">
+            <Link to="/" className="text-gray-400 hover:text-custom transition">
               HOME
             </Link>
             <Link
