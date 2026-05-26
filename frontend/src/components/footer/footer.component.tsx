@@ -51,6 +51,14 @@ if (!email || !emailRegex.test(email)) {
     { label: "Help Center", to: "/help"       },
     { label: "Community",   to: "/community"  },
     { label: "Guidelines",  to: "/guidelines" },
+    { label: "Contributors", to: "/contributors" },
+    { label: "Report Bug",   to: import.meta.env.VITE_GITHUB_REPO_ISSUES_URL },
+  ];
+
+  const legalLinks = [
+    { label: "Privacy Policy", to: "/privacy-policy" },
+    { label: "Terms & Conditions", to: "/terms" },
+    { label: "Cookies", to: "/cookies" },
   ];
 
   return (
@@ -107,7 +115,7 @@ if (!email || !emailRegex.test(email)) {
         }}
       />
 
-      <div className="relative z-10 max-w-[1450px] mx-auto px-8 lg:px-10 pt-14 pb-9">
+      <div className="relative z-10 max-w-[1450px] mx-auto px-8 lg:px-10 pt-14 pb-16 lg:pb-20">
         <div className="grid grid-cols-12 gap-x-6 gap-y-10 items-start">
 
           {/* Brand */}
@@ -152,6 +160,27 @@ if (!email || !emailRegex.test(email)) {
             <ul className="flex flex-col gap-[12.5px]">
               {resourceLinks.map(({ label, to }) => (
                 <li key={to}>
+                  {to && to.startsWith("http") ? (
+                    <a href={to} target="_blank" rel="noopener noreferrer" className="group relative inline-flex text-[14px] leading-none text-slate-300/85 transition-colors duration-200 hover:text-blue-300">
+                      {label}
+                      <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-blue-400/40 transition-all duration-300 ease-out group-hover:w-full" />
+                    </a>
+                  ) : (
+                    <Link to={to} className="group relative inline-flex text-[14px] leading-none text-slate-300/85 transition-colors duration-200 hover:text-blue-300">
+                      {label}
+                      <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-blue-400/40 transition-all duration-300 ease-out group-hover:w-full" />
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Legal */}
+          <div className="col-span-6 md:col-span-2 flex flex-col gap-4">
+            <h3 className="text-[11.5px] font-bold tracking-[0.22em] uppercase text-white/70">Legal</h3>
+            <ul className="flex flex-col gap-[12.5px]">
+              {legalLinks.map(({ label, to }) => (
+                <li key={to}>
                   <Link to={to} className="group relative inline-flex text-[14px] leading-none text-slate-300/85 transition-colors duration-200 hover:text-blue-300">
                     {label}
                     <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-blue-400/40 transition-all duration-300 ease-out group-hover:w-full" />
@@ -160,7 +189,6 @@ if (!email || !emailRegex.test(email)) {
               ))}
             </ul>
           </div>
-
           {/* Newsletter */}
           <div className="col-span-12 md:col-span-3 flex flex-col gap-3.5">
             <h3 className="text-[11.5px] font-bold tracking-[0.22em] uppercase text-white/70">Stay Updated</h3>
@@ -216,27 +244,28 @@ if (!email || !emailRegex.test(email)) {
           }}
         />
 
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-400/80">
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-400/80 pr-10 sm:pr-12 lg:pr-16">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-2.5 gap-y-1">
             <span className="text-slate-400/80">&copy; 2025 StorySparkAI. All rights reserved.</span>
             <span className="hidden sm:inline text-white/[0.12]">|</span>
             <span className="italic text-slate-400/60">Crafted for storytellers</span>
           </div>
+          
           <div className="flex items-center gap-2.5">
-            {["Privacy", "Terms", "Cookies"].map((item, i, arr) => (
-              <span key={item} className="flex items-center gap-2.5">
-                              <Link
-                to="/privacy-policy"
-                className="text-slate-400/80 transition-colors duration-200 hover:text-blue-300"
-              >
-                Privacy
-              </Link>
-                {i < arr.length - 1 && <span className="text-white/[0.12]">|</span>}
-              </span>
-            ))}
+  {(["Privacy", "Terms", "Cookies"] as const).map((item, i, arr) => (
+    <span key={item} className="flex items-center gap-2.5">
+      <Link
+        to={item === "Privacy" ? "/privacy-policy" : item === "Terms" ? "/terms" : "/cookies"}
+        className="text-slate-400/80 transition-colors duration-200 hover:text-blue-300"
+      >
+        {item}
+      </Link>
+      {i < arr.length - 1 && <span className="text-white/[0.12]">|</span>}
+    </span>
+  ))}
+</div>
           </div>
         </div>
-      </div>
     </footer>
   );
 };

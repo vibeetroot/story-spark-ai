@@ -5,11 +5,9 @@ export const getShortenedText = (
   wordLimit: number = 35
 ): string => {
   if (!content) return "";
-
   const words: string[] = content.split(" ");
-
   return words.length > wordLimit
-    ? `${words.slice(0, wordLimit).join(" ")}...`
+    ? words.slice(0, wordLimit).join(" ") + "..."
     : content;
 };
 
@@ -26,27 +24,28 @@ export const getRequestLimit = (subscriptionType: string) => {
 };
 
 export const doPublishAccessibility = (subscriptionType: string) => {
-  return (
+  if (
     subscriptionType === "free" ||
     subscriptionType === "pro" ||
     subscriptionType === "premium"
-  );
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 };
 
-export interface ITopicData {
-  title: string;
-  color: string;
-  selected: boolean;
-}
+export const SELECTED_TOPIC_CLASSES = "bg-indigo-100 text-indigo-800";
+export const UNSELECTED_TOPIC_CLASSES = "bg-slate-700 text-slate-300";
+
+
+
+
 
 export interface ITopicData {
   title: string;
-  // REMOVED: color: string;
-  selected: boolean;
-}
-
-export interface ITopicData {
-  title: string;
+  color?: string;
+  className?: string;
   selected: boolean;
 }
 
@@ -54,53 +53,51 @@ export const topicsData: ITopicData[] = [
   {
     title: "#AIWriting",
     color: "bg-blue-100 text-blue-800",
+    className: SELECTED_TOPIC_CLASSES,
     selected: true,
   },
   {
     title: "#StoryGeneration",
     color: "bg-purple-100 text-purple-800",
+    className: SELECTED_TOPIC_CLASSES,
     selected: true,
   },
   {
     title: "#Writing",
-    color: "bg-cyan-100 text-cyan-800",
+    color: "bg-blue-100 text-blue-800",
+    className: UNSELECTED_TOPIC_CLASSES,
     selected: false,
   },
   {
     title: "#Creativity",
     color: "bg-green-100 text-green-800",
+    className: UNSELECTED_TOPIC_CLASSES,
     selected: false,
   },
   {
     title: "#DigitalMarketing",
     color: "bg-yellow-100 text-yellow-800",
+    className: UNSELECTED_TOPIC_CLASSES,
     selected: false,
   },
   {
     title: "#Storytelling",
-    color: "bg-pink-100 text-pink-800",
+    color: "bg-purple-100 text-purple-800",
+    className: UNSELECTED_TOPIC_CLASSES,
     selected: false,
   },
   {
     title: "#Productivity",
     color: "bg-red-100 text-red-800",
+    className: UNSELECTED_TOPIC_CLASSES,
     selected: false,
   },
-
-  { title: "#AIWriting", selected: true },
-  { title: "#StoryGeneration", selected: true },
-  { title: "#Writing", selected: false },
-  { title: "#Creativity", selected: false },
-  { title: "#DigitalMarketing", selected: false },
-  { title: "#Storytelling", selected: false },
-  { title: "#Productivity", selected: false },
 ];
 
 export const getWordCount = (str: string) => {
   if (typeof str !== "string" || !str.trim()) {
     return 0;
   }
-
   return str
     .trim()
     .split(/\s+/)
@@ -135,8 +132,7 @@ export const prompts = [
   },
   {
     id: 6,
-    prompt:
-      "Tell the story of a robot who desperately wants to become human.",
+    prompt: "Tell the story of a robot who desperately wants to become human.",
   },
   {
     id: 7,
@@ -155,7 +151,6 @@ export const prompts = [
   },
   {
     id: 10,
-    prompt:
-      "A time traveler finds themselves stuck in the age of dinosaurs.",
+    prompt: "A time traveler finds themselves stuck in the age of dinosaurs.",
   },
 ];

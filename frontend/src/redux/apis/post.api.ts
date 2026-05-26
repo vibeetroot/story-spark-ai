@@ -111,10 +111,7 @@ const postApi = baseApi.injectEndpoints({
         method: "GET",
       }),
 
-      transformResponse: (response: {
-        data: Post;
-        message: string;
-      }) => {
+      transformResponse: (response: { data: Post; message: string }) => {
         return response.data;
       },
 
@@ -136,10 +133,7 @@ const postApi = baseApi.injectEndpoints({
         params: arg.excludeId ? { excludeId: arg.excludeId } : {},
       }),
 
-      transformResponse: (response: {
-        data: Post[];
-        message: string;
-      }) => {
+      transformResponse: (response: { data: Post[]; message: string }) => {
         return response.data;
       },
 
