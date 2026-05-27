@@ -13,6 +13,8 @@ export interface IPostPayload {
   imageURL: string;
   topic: ITopic[];
   language?: string;
+  emotions?: string[];
+  genre?: string;
 }
 
 export interface IPost extends IPostPayload {
