@@ -31,6 +31,15 @@ const toggleReaction = async (
   if (existingReaction) {
     if (existingReaction.type === type) {
       await Reaction.deleteOne({ _id: existingReaction._id });
+      
+      // Update Post stats from upstream
+      post.likesCount = Math.max(0, post.likesCount - 1);
+      post.reactions = post.reactions || [];
+      post.reactions = post.reactions.filter(
+        (rId) => rId.toString() !== existingReaction._id.toString()
+      );
+      await post.save();
+      
       message = "Reaction removed successfully";
     } else {
       existingReaction.type = type as "like" | "love" | "laugh" | "angry" | "sad";
@@ -38,11 +47,18 @@ const toggleReaction = async (
       message = "Reaction updated successfully";
     }
   } else {
-    await Reaction.create({
+    const newReaction = await Reaction.create({
       postId: new Types.ObjectId(postId),
       userId: user._id,
       type: type as "like" | "love" | "laugh" | "angry" | "sad",
     });
+    
+    // Update Post stats from upstream
+    post.likesCount = (post.likesCount || 0) + 1;
+    post.reactions = post.reactions || [];
+    post.reactions.push(newReaction._id);
+    await post.save();
+    
     message = "Reaction added successfully";
   }
 
