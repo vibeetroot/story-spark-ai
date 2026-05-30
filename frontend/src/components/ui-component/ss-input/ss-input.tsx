@@ -34,49 +34,85 @@ const SSInput = <T extends FieldValues>({
   const [showPassword, setShowPassword] = useState(false);
 
   const inputType =
-    type === "password"
-      ? showPassword
-        ? "text"
-        : "password"
-      : type;
+    type === "password" ? (showPassword ? "text" : "password") : type;
+
   return (
-    <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-600 dark:text-gray-400">
+    <div className="w-full">
+      <label
+        htmlFor={name}
+        className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+      >
         {label}
       </label>
-      <div className="relative mt-2">
+
+      <div className="relative w-full">
         {icon && (
-          <span className="absolute inset-y-0 left-0 pl-2 flex items-center text-gray-500">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
             <i className={icon}></i>
           </span>
         )}
+
         <input
-          type={inputType}
           id={name}
-          className={`h-11 w-full pl-8 pr-10 py-0 text-base leading-[2.75rem] text-gray-900 dark:text-gray-200 bg-white dark:bg-slate-800 border rounded-md sm:text-sm ${
-            error
-              ? "border-red-500 outline-red-500"
-              : "border-gray-300 outline-gray-300 focus:outline-indigo-600"
-          }`}
+          type={inputType}
           placeholder={placeholder}
           autoComplete={autoComplete}
           {...register(name, validation)}
+          className={`
+            w-full
+            min-w-0
+            rounded-xl
+            border
+            bg-white
+            dark:bg-slate-800
+            px-4
+            py-3
+            ${icon ? "pl-10" : ""}
+            ${type === "password" ? "pr-12" : ""}
+            text-sm
+            text-slate-900
+            dark:text-slate-100
+            placeholder:text-slate-400
+            transition-all
+            duration-200
+
+            ${
+              error
+                ? `
+                  border-red-500
+                  focus:border-red-500
+                  focus:ring-2
+                  focus:ring-red-500/20
+                `
+                : `
+                  border-slate-300
+                  dark:border-slate-700
+                  focus:border-indigo-500
+                  focus:ring-2
+                  focus:ring-indigo-500/20
+                `
+            }
+
+            focus:outline-none
+          `}
         />
+
         {type === "password" && (
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
           >
-            <i className={showPassword ? "fi fi-rr-eye" : "fi fi-rr-eye-crossed"}></i>
+            <i
+              className={showPassword ? "fi fi-rr-eye" : "fi fi-rr-eye-crossed"}
+            />
           </button>
         )}
       </div>
-      {error && (
-        <p className="text-red-400 text-sm mt-1">
-          {error.message}
-        </p>
-      )}
+
+      <div className="min-h-[20px] mt-1">
+        {error && <p className="text-xs text-red-500">{error.message}</p>}
+      </div>
     </div>
   );
 };
