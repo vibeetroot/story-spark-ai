@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import crypto from "crypto";
 import logger from "../utils/logger.util";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import config from "../config";
@@ -45,7 +46,8 @@ const rooms = new Map<string, IRoom>();
 const cleanupTimeouts = new Map<string, NodeJS.Timeout>();
 
 function generateRoomId(): string {
-  return Math.random().toString(36).substring(2, 10);
+  // 128 bits of CSPRNG entropy so the room id is an unguessable join capability.
+  return crypto.randomBytes(16).toString("hex");
 }
 
 function getColorForUser(index: number): string {
