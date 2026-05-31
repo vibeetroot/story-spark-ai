@@ -17,8 +17,7 @@ import { GamificationService } from "../gamification/gamification.service";
 
 const googleClient = new OAuth2Client(config.google_client_id);
 
-// Claims embedded in every issued token. tokenVersion enables global session
-// revocation (bumped on password change/reset and on refresh-token reuse).
+// Token claims; tokenVersion enables global session revocation.
 const buildClaims = (user: any) => ({
   _id: user._id,
   email: user.email,
@@ -29,15 +28,14 @@ const buildClaims = (user: any) => ({
   tokenVersion: user.tokenVersion ?? 0,
 });
 
-const issueAccessToken = (user: any): string =>
+const issueAccessToken = (user: any, expiresIn?: string): string =>
   JwtHalers.createToken(
     buildClaims(user),
     config.jwt.secret as Secret,
-    config.jwt.expires_in as string
+    expiresIn ?? (config.jwt.expires_in as string)
   );
 
-// Issues a refresh token carrying a unique jti and records a session for it so
-// the token can be rotated and reuse can be detected.
+// Issues a refresh token with a unique jti and records its session for rotation.
 const issueRefreshToken = async (user: any): Promise<string> => {
   const jti = crypto.randomBytes(16).toString("hex");
   const token = JwtHalers.createToken(
@@ -53,24 +51,24 @@ const issueRefreshToken = async (user: any): Promise<string> => {
   return token;
 };
 
-const login = async (payload: AuthModel) => {
-  const { email: userEmail, password } = payload;
+const login = async (payload: AuthModel & { rememberMe?: boolean }) => {
+  const { email: userEmail, password, rememberMe } = payload;
   const isExistUser = await User.findOne({ email: userEmail });
   if (!isExistUser) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
   }
-  
+
   // Check if user has password (Google users might not)
   if (!isExistUser.password) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Please use Google login for this account!");
   }
-  
+
   const match = await bcrypt.compare(password, isExistUser.password);
   if (!match) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Password is not valid!");
   }
 
-  const accessToken = issueAccessToken(isExistUser);
+  const accessToken = issueAccessToken(isExistUser, rememberMe ? "30d" : "15m");
   const refreshToken = await issueRefreshToken(isExistUser);
 
   GamificationService.updateDailyStreak(String(isExistUser._id)).catch(console.error);
@@ -177,8 +175,7 @@ const refreshToken = async (token: string) => {
     );
   }
 
-  // A used token presented again means the token was stolen and replayed.
-  // Revoke the whole family and bump tokenVersion to kill access tokens too.
+  // Reuse of an already-used token signals theft: revoke the family and bump tokenVersion.
   if (session.used) {
     await RefreshSession.updateMany({ userId: user._id }, { revoked: true });
     await User.updateOne({ _id: user._id }, { $inc: { tokenVersion: 1 } });
@@ -242,6 +239,11 @@ const googleLogin = async (payload: { token: string }) => {
     const payload_data = ticket.getPayload();
     if (!payload_data || !payload_data.email) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Invalid Google token");
+    }
+
+    // Reject unverified Google emails to prevent account takeover (CWE-287).
+    if (!payload_data.email_verified) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "Google email is not verified");
     }
 
     const { email, name: googleName, picture } = payload_data;
@@ -398,8 +400,7 @@ const resetPassword = async (payload: {
     );
   }
 
-  // Update user password and bump tokenVersion so every previously issued
-  // session is invalidated, then revoke any outstanding refresh sessions.
+  // Bump tokenVersion and revoke sessions so the reset invalidates old logins.
   user.password = password;
   user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   await user.save();
