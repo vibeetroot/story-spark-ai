@@ -5,6 +5,13 @@ import CollabHome from "./components/collab/CollabHome";
 import CollabRoom from "./components/collab/CollabRoom";
 import StoriesComponent from "./components/stories/stories.component";
 
+
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import HeroSectionComponent from "./components/hero/hero_section.component";
 import HomeComponent from "./components/home/home.component";
 import LoginComponent from "./components/login/login.component";
@@ -36,6 +43,7 @@ import PrivacyPolicy from "./components/footer/Privacy.tsx";
 import CookiePolicy from "./components/footer/cookie-policy.tsx";
 import Terms from "./components/footer/terms.tsx";
 import GuidelinesComponent from "./components/footer/guidelines.tsx";
+import ScrollToTop from "./components/ScrollToTop";
 
 import TemplatesComponent from "./components/templates/templates.component";
 import CommunityComponent from "./components/community/community.component";
@@ -45,11 +53,16 @@ import MagicCursorComponent from "./components/magic-cursor/magic_cursor.compone
 import ContributorsComponent from "./components/footer/contributors";
 import BranchingStory from "./components/stories/BranchingStory";
 import ReportBug from "./components/report-bug/ReportBug";
+import ForgotPasswordComponent from "./components/forgot-password/forgot-password.component";
 import AnalyticsPage from "./components/dashboard/analytics/analytics.page";
 import StoryWorkspace from "./components/story/StoryWorkspace";
 
+
 // <<<<<<< HEAD
 // =======
+
+ import Scrolltotopandscrolltobottom from "./components/Scrolltotopandscrolltobottom.tsx"
+
 
 
 type ProtectedRouteProps = {
@@ -91,7 +104,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <><HeroSectionComponent /><HomeComponent /></> },
       { path: "templates", element: <TemplatesComponent /> },
-      { path: "writing-assistant", element: <WritingAssistantComponent /> },
+      { path: "writing-assistant", element: <ProtectedRoute allowedRoles={ALL_ROLES} element={<WritingAssistantComponent />} />, },
       { path: "story-inspiration", element: <StoryInspirationWrapper /> },
       { path: "stories", element: <StoriesComponent /> },
       { path: "story-workspace", element: <StoryWorkspace /> },
@@ -111,6 +124,7 @@ const router = createBrowserRouter([
       { path: "guidelines", element: <GuidelinesComponent /> },
       { path: "contributors", element: <ContributorsComponent /> },
       { path: "report-bug", element: <ReportBug /> },
+      { path: "forgot-password", element: <ForgotPasswordComponent /> },
 
       // Protected Sub-Tree running under the RootLayout context
       {
@@ -126,7 +140,7 @@ const router = createBrowserRouter([
       { path: "*", element: <NotFoundComponent /> },
     ],
   },
-  
+
   // Isolated layout branches (Bypassing public navigation headers entirely)
   { path: "/auth/email-validation", element: <EmailValidationComponent /> },
   { path: "/payment", element: <PaymentComponent /> },
@@ -137,10 +151,10 @@ const router = createBrowserRouter([
   // Administrative Dashboard Infrastructure Tree
   {
     path: "/dashboard",
-    element: <ProtectedRoute allowedRoles={ALL_ROLES} />, 
+    element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
     children: [
       {
-        element: <DashboardLayout />, 
+        element: <DashboardLayout />,
         children: [
           { index: true, element: <DashboardComponent /> },
           { path: "profile", element: <ProfileComponent /> },
@@ -174,6 +188,10 @@ function App() {
     </>
   );
 }
+
+
+
+export default App;
 
 
 export default App;
