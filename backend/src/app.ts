@@ -27,7 +27,7 @@ app.use(limiter as any);
 const defaultCorsOrigins = [
   "http://localhost:4001",
   "http://localhost:4002",
-  "https://storysparkai.vercel.app",
+  "https://storysparkai-five.vercel.app",
 ];
 
 const corsOrigins =

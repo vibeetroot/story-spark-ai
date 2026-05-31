@@ -1,63 +1,27 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { Post } from "../../../models/post";
 import { useGetLatestListsQuery } from "../../../redux/apis/post.api";
 import LoadingAnimation from "../../loading/loading.component";
 import SSProfile from "../../ui-component/ss-profile/ss-profile";
 
-type PostAuthor = {
-  _id?: string;
-  name?: string;
-  email?: string;
-};
-
-type PostSummary = {
-  _id?: string;
-  title?: string;
-  author?: PostAuthor | string;
-  likesCount?: number;
-  commentsCount?: number;
-  viewsCount?: number;
-  bookmarks?: unknown[] | number;
-};
-
 type SpotlightWriter = {
-  author: PostAuthor;
+  author: Post["author"];
   storiesCount: number;
   likesCount: number;
   commentsCount: number;
   viewsCount: number;
   bookmarksCount: number;
   engagementScore: number;
-  topPost: PostSummary;
-};
-
-const normalizeAuthor = (author: PostAuthor | string | undefined): PostAuthor | null => {
-  if (!author) {
-    return null;
-  }
-
-  if (typeof author === "string") {
-    return { name: author };
-  }
-
-  return {
-    _id: author._id ? String(author._id) : undefined,
-    name: author.name,
-    email: author.email,
-  };
+  topPost: Post;
 };
 
 const TOP_WRITERS_LIMIT = 3;
 
-const getBookmarkCount = (post: PostSummary) =>
-  typeof post.bookmarks === "number"
-    ? post.bookmarks
-    : Array.isArray(post.bookmarks)
-    ? post.bookmarks.length
-    : 0;
+const getBookmarkCount = (post: Post) => post.bookmarks?.length ?? 0;
 
-const getPostEngagementScore = (post: PostSummary) =>
+const getPostEngagementScore = (post: Post) =>
   (post.likesCount ?? 0) * 3 +
   (post.commentsCount ?? 0) * 2 +
   getBookmarkCount(post) * 2 +
@@ -95,63 +59,77 @@ const CommunitySpotlightComponent = () => {
   const { data, isLoading, isError, refetch } = useGetLatestListsQuery(undefined);
   const navigate = useNavigate();
 
+  console.log("Posts Data:", data?.posts);
+
+  
   const topWriters = useMemo(() => {
-    const latestPosts = (data?.posts ?? []) as PostSummary[];
-    const writerMap = new Map<string, Omit<SpotlightWriter, "engagementScore">>();
+    const writers = new Map<string, Omit<SpotlightWriter, "engagementScore">>();
 
-    latestPosts.forEach((post) => {
-      const author = normalizeAuthor(post.author);
-      if (!author) {
-        return;
-      }
+    data?.posts?.forEach((post: Post) => {
+      if (!post.author) return;
 
-      const authorKey = author._id || author.email || author.name;
-      if (!authorKey) {
-        return;
-      }
+      const authorKey = post.author._id || post.author.email || post.author.name;
+      const existingWriter = writers.get(authorKey);
+      const postScore = getPostEngagementScore(post);
 
-      const postStats = {
-        storiesCount: 1,
-        likesCount: post.likesCount ?? 0,
-        commentsCount: post.commentsCount ?? 0,
-        viewsCount: post.viewsCount ?? 0,
-        bookmarksCount: getBookmarkCount(post),
-        topPost: post,
-      };
-
-      const existingWriter = writerMap.get(authorKey);
-      if (existingWriter) {
-        existingWriter.storiesCount += 1;
-        existingWriter.likesCount += postStats.likesCount;
-        existingWriter.commentsCount += postStats.commentsCount;
-        existingWriter.viewsCount += postStats.viewsCount;
-        existingWriter.bookmarksCount += postStats.bookmarksCount;
-
-        if (getPostEngagementScore(post) > getPostEngagementScore(existingWriter.topPost)) {
-          existingWriter.topPost = post;
-        }
-      } else {
-        writerMap.set(authorKey, {
-          author,
-          storiesCount: postStats.storiesCount,
-          likesCount: postStats.likesCount,
-          commentsCount: postStats.commentsCount,
-          viewsCount: postStats.viewsCount,
-          bookmarksCount: postStats.bookmarksCount,
-          topPost: postStats.topPost,
+      if (!existingWriter) {
+        writers.set(authorKey, {
+          author: post.author,
+          storiesCount: 1,
+          likesCount: post.likesCount ?? 0,
+          commentsCount: post.commentsCount ?? 0,
+          viewsCount: post.viewsCount ?? 0,
+          bookmarksCount: getBookmarkCount(post),
+          topPost: post,
         });
+
+        return;
+      }
+
+      existingWriter.storiesCount += 1;
+      existingWriter.likesCount += post.likesCount ?? 0;
+      existingWriter.commentsCount += post.commentsCount ?? 0;
+      existingWriter.viewsCount += post.viewsCount ?? 0;
+      existingWriter.bookmarksCount += getBookmarkCount(post);
+
+      if (postScore > getPostEngagementScore(existingWriter.topPost)) {
+        existingWriter.topPost = post;
       }
     });
 
-    return Array.from(writerMap.values())
+    return Array.from(writers.values())
       .map((writer) => ({
         ...writer,
         engagementScore: getWriterEngagementScore(writer),
       }))
       .sort((a, b) => b.engagementScore - a.engagementScore)
       .slice(0, TOP_WRITERS_LIMIT);
-  }, [data]);
+  }, [data?.posts]);
 
+  if (isLoading) {
+    return <LoadingAnimation />;
+  }
+
+  if (isError) {
+    return (
+      <section className="px-5 py-10">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-gray-200">
+            Community Spotlight
+          </h2>
+  
+          <p className="mt-2 text-slate-600 dark:text-gray-400">
+            Top contributors loved by the Story Spark community
+          </p>
+        </div>
+  
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((item) => (
+            <div
+              key={item}
+              className="animate-pulse rounded-xl bg-gray-200 dark:bg-slate-800 h-40"
+            ></div>
+          ))}
   if (isLoading) return <LoadingAnimation />;
   if (isError) {
     return (
@@ -170,7 +148,7 @@ const CommunitySpotlightComponent = () => {
       </section>
     );
   }
-
+  
   return (
     <section className="px-5 py-10 text-slate-900 dark:text-slate-100">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -194,7 +172,7 @@ const CommunitySpotlightComponent = () => {
       </div>
 
       {topWriters.length > 0 ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {topWriters.map((writer, index) => {
             const rank = index + 1;
             const style = rankStyles[index];
@@ -207,7 +185,7 @@ const CommunitySpotlightComponent = () => {
                   writer.author.name || "Unknown User"
                 }`}
                 onClick={() => navigate(`/post/${writer.topPost._id}`)}
-                className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/80 p-5 text-left shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700/60 dark:bg-slate-900/70 dark:hover:border-blue-400/50 dark:focus:ring-offset-slate-950"
+                className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-500 ease-out cursor-pointer hover:bg-blue-50 hover:-translate-y-4 hover:scale-105 hover:z-20 hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/30"
               >
                 <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-violet-500 to-amber-400"></div>
 
@@ -218,7 +196,7 @@ const CommunitySpotlightComponent = () => {
                     >
                       <SSProfile
                         name={writer.author.name || "Unknown User"}
-                        size="h-14 w-14"
+                        size="h-12 w-12"
                       />
                     </div>
 
@@ -248,7 +226,7 @@ const CommunitySpotlightComponent = () => {
                   </h3>
                 </div>
 
-                <div className="mt-auto grid grid-cols-2 gap-3 text-sm">
+                <div className="mt-auto grid grid-cols-2 gap-2 text-sm">
                   <div className="rounded-xl bg-blue-50 px-3 py-3 dark:bg-blue-500/10">
                     <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
                       {formatMetric(writer.engagementScore)}

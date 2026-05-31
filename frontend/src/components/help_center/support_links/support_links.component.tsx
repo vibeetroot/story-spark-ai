@@ -1,15 +1,15 @@
 import { FC } from "react";
 import { motion } from "framer-motion";
-import { SupportLink } from "../help_center.utils";
+import { Support_Links } from "../help_center.utils";
 
 interface SupportLinksProps {
-  links: SupportLink[];
+  links: Support_Links[];
 }
 
 const SupportLinks: FC<SupportLinksProps> = ({ links }) => {
   return (
     <motion.section
-      id="support"
+      id="support-links-section"
       className="scroll-mt-28"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -24,7 +24,7 @@ const SupportLinks: FC<SupportLinksProps> = ({ links }) => {
         </div>
         <h2
           id="support-heading"
-          className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white"
+          className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-gray-300"
         >
           Support & Community
         </h2>
@@ -34,37 +34,66 @@ const SupportLinks: FC<SupportLinksProps> = ({ links }) => {
         </p>
       </div>
 
+      {/* Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        {links && links.map((link) => (
+          <motion.a
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
         {links.map((link) => (
-          <a
+          <motion.a
             key={link.id}
             href={link.href}
             target={link.external ? "_blank" : undefined}
             rel={link.external ? "noopener noreferrer" : undefined}
-            className="group flex items-start gap-5 bg-white dark:bg-white/[0.04] hover:bg-slate-50 dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/10 hover:border-indigo-500/30 p-6 rounded-2xl shadow-sm transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="group flex items-start gap-5 bg-white dark:bg-blue-500/10 hover:bg-gray-50 dark:hover:bg-blue-500/20 border border-gray-200 dark:border-white/5 hover:border-indigo-400 dark:hover:border-indigo-500/30 p-6 rounded-xl shadow-sm dark:shadow-none transition-all duration-300 hover:scale-[1.02] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="group flex items-start gap-5 bg-white dark:bg-blue-500/10 hover:bg-slate-50 dark:hover:bg-blue-500/20 border border-slate-200 dark:border-white/5 hover:border-indigo-500/30 p-6 rounded-xl shadow-sm transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
-              <i className={`${link.icon} text-xl`} aria-hidden="true"></i>
+
+            <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
+
+              <i
+                className={`${link.icon} text-xl`}
+                aria-hidden="true"
+              ></i>
+
             </div>
+            
 
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-700 dark:group-hover:text-white transition-colors flex items-center gap-2">
+
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-gray-300 group-hover:text-indigo-700 dark:group-hover:text-white transition-colors flex items-center gap-2">
+
                 {link.title}
+
                 {link.external && (
-                  <i className="fas fa-external-link-alt text-xs text-slate-400 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" aria-hidden="true"></i>
+                  <i
+                    className="fas fa-external-link-alt text-xs text-slate-400 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400"
+                    aria-hidden="true"
+                  ></i>
                 )}
+
+              <p className="text-gray-600 dark:text-gray-500 text-sm mt-1 leading-relaxed">
               </h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 leading-relaxed">
+
+              <p className="text-slate-600 dark:text-gray-500 text-sm mt-1 leading-relaxed">
                 {link.description}
               </p>
+
             </div>
-          </a>
+          </motion.a>
         ))}
       </div>
 
+<<<<<<< HEAD
+      {/* GitHub CTA Container */}
+      <div className="flex justify-center mt-8">
+=======
       <div className="mt-10 text-center">
+        {/* GitHub CTA */}
+>>>>>>> upstream/main
         <a
-          href="https://github.com/ronisarkarexe/story-spark-ai"
+          href="https://github.com"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-5 py-3 text-sm font-semibold text-indigo-600 transition-all duration-300 hover:scale-105 hover:bg-indigo-500/20 dark:text-indigo-300"
@@ -72,6 +101,21 @@ const SupportLinks: FC<SupportLinksProps> = ({ links }) => {
           <i className="fa-brands fa-github text-base"></i>
           Contribute Now
         </a>
+<<<<<<< HEAD
+          {/* GitHub CTA */}
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-5 py-3 text-sm font-semibold text-indigo-600 transition-all duration-300 hover:scale-105 hover:bg-indigo-500/20 dark:text-indigo-300"
+          >
+            <i className="fa-brands fa-github text-base"></i>
+            Contribute Now
+          </a>
+        ))}
+
+=======
+>>>>>>> upstream/main
       </div>
     </motion.section>
   );
