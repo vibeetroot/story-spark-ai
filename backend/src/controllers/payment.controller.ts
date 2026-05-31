@@ -1,20 +1,10 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
-import razorpayInstance from "../config/razorpay";
+import getRazorpay from "../config/razorpay";
 import { getToken } from "../app/middleware/token";
 import { Order } from "../app/modules/payment/order.model";
 import { User } from "../app/modules/user/user.model";
 import { PLAN_PRICING, normalizePlan } from "../app/modules/payment/payment.constant";
-
-// Fail loudly at startup if the verification secret is missing so a
-// misconfigured deployment cannot silently pass undefined to createHmac().
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
-if (!RAZORPAY_KEY_SECRET) {
-  throw new Error(
-    "Missing required environment variable: RAZORPAY_KEY_SECRET. " +
-    "Payment verification cannot work without it."
-  );
-}
 
 // Creates a Razorpay order for a chosen plan. The price is resolved server
 // side from PLAN_PRICING so the client cannot dictate the amount, and the
@@ -28,7 +18,7 @@ export const createOrder = async (req: Request, res: Response) => {
     }
 
     const pricing = PLAN_PRICING[plan];
-    const order = await razorpayInstance.orders.create({
+    const order = await getRazorpay().orders.create({
       amount: pricing.amount,
       currency: pricing.currency,
       receipt: `receipt_${token._id}_${Date.now()}`,
@@ -54,6 +44,11 @@ export const createOrder = async (req: Request, res: Response) => {
 // replayed verify request a no-op so a tier cannot be granted twice.
 export const verifyPayment = async (req: Request, res: Response) => {
   try {
+    const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+    if (!RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ success: false, message: "Payment not configured" });
+    }
+
     const token = getToken(req);
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
