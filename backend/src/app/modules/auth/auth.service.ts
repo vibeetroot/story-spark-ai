@@ -52,7 +52,7 @@ const login = async (payload: AuthModel) => {
   };
 };
 
-const register = async (payload: IUser & { verificationToken?: string; confirmPassword?: string }) => {
+const register = async (payload: IUser & { verificationToken?: string }) => {
   const { email: userEmail, verificationToken } = payload;
   
   // FIX #4: Verify that email was verified via OTP before allowing registration
@@ -259,8 +259,7 @@ const changePassword = async (userPayload: any, payload: any) => {
   }
 
   await user.save();
-};
-
+}
 const forgotPassword = async (email: string) => {
   if (!email) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email is required!");
@@ -362,7 +361,7 @@ const resetPassword = async (payload: {
   };
 };
 
-export const AuthService = {
+ export const AuthService = {
   login,
   register,
   refreshToken,
