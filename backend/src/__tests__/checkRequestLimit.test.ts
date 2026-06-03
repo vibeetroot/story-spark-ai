@@ -98,7 +98,9 @@ describe("checkRequestLimit — factory function signature", () => {
 
 describe("checkRequestLimit() — middleware behaviour", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    // resetAllMocks clears call history AND resets queued implementations,
+    // preventing inter-test coupling from leftover mockOnce behaviour.
+    jest.resetAllMocks();
   });
 
   // ── Happy path ──────────────────────────────────────────────────────────────
@@ -118,7 +120,7 @@ describe("checkRequestLimit() — middleware behaviour", () => {
     );
     expect(mockReserveUserQuota).toHaveBeenCalledWith("user@example.com");
     expect(next).toHaveBeenCalledTimes(1);
-    expect(next).toHaveBeenCalledWith(/* no error */);
+    expect(next).toHaveBeenCalledWith();
   });
 
   it("attaches quotaRefundGuard to res.locals after a successful reservation", async () => {
@@ -225,7 +227,7 @@ describe("checkRequestLimit() — middleware behaviour", () => {
 
 describe("checkRequestLimit — quota enforcement (allow vs block)", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   it("allows request when quota is not yet exhausted (resolves without throwing)", async () => {
@@ -285,7 +287,7 @@ describe("checkRequestLimit — regression: /remix and /translate routes no long
    */
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   it("[/remix] middleware returned by checkRequestLimit() calls next() — request does NOT hang", async () => {
@@ -314,16 +316,26 @@ describe("checkRequestLimit — regression: /remix and /translate routes no long
     await middleware(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledWith();
   });
 
-  it("factory function (checkRequestLimit) called directly WITHOUT () never calls next() — demonstrates original bug", async () => {
+  it("factory function (checkRequestLimit) called directly WITHOUT () never calls next() — demonstrates original bug", () => {
     /**
      * This test documents the broken behaviour so future developers
      * understand exactly what went wrong.
      *
-     * When Express calls the factory directly with (req, res, next),
-     * the factory returns the inner async function — but next() is
-     * never invoked. We reproduce this here.
+     * checkRequestLimit is defined as:
+     *   const checkRequestLimit = () => async (req, res, next) => { … };
+     *
+     * When Express mistakenly calls the factory as if it were middleware:
+     *   router.post('/remix', checkRequestLimit, …)  ← BUG
+     *
+     * Express invokes checkRequestLimit(req, res, next). The factory ignores
+     * those arguments and simply returns the inner async middleware function.
+     * next() is never called — the request hangs forever.
+     *
+     * Note: result is the inner middleware *function* (not a Promise),
+     * so no await is needed or meaningful here.
      */
     const { req, res, next } = buildMocks("Bearer some.jwt.token");
 
@@ -331,11 +343,10 @@ describe("checkRequestLimit — regression: /remix and /translate routes no long
     // Cast to `any` because TypeScript correctly flags the type mismatch.
     const result = (checkRequestLimit as any)(req, res, next);
 
-    // The factory returns a Promise<function> — it does NOT call next().
+    // The factory did NOT call next() — it only returned the inner middleware.
     expect(next).not.toHaveBeenCalled();
 
-    // The return value is actually the inner middleware function.
-    // (Awaiting it here so the floating Promise doesn't pollute other tests.)
-    await result;
+    // Confirm the returned value is the inner middleware function (not a Promise).
+    expect(typeof result).toBe("function");
   });
 });
