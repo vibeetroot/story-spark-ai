@@ -112,7 +112,7 @@ export default function CollabRoom() {
     }
   }, [roomId, navigate]);
 
-  const handleAddText = () => {
+const handleAddText = () => {
     if (!newText.trim() || !user) return;
 
     const socket = getSocketIo();
