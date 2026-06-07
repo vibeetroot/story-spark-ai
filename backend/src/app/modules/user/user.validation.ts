@@ -46,17 +46,17 @@ const resetPassword = z.object({
 const updateUser = z.object({
   body: z
     .object({
-      name: z.string().trim().min(1, "Full Name cannot be empty.").optional(),
+      name: z.string().trim().min(1, "Full Name cannot be empty.").max(100).optional(),
       profile: z
         .object({
-          avatar: z.string().optional(),
-          bio: z.string().optional(),
+          avatar: z.string().max(2000).optional(),
+          bio: z.string().max(1000, "Bio cannot exceed 1000 characters").optional(),
           social: z
             .object({
-              facebook: z.string().optional(),
-              twitter: z.string().optional(),
-              linkedin: z.string().optional(),
-              instagram: z.string().optional(),
+              facebook: z.string().max(200).optional(),
+              twitter: z.string().max(200).optional(),
+              linkedin: z.string().max(200).optional(),
+              instagram: z.string().max(200).optional(),
             })
             .partial()
             .strict()
