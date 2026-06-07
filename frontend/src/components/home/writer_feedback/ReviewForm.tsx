@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState } from "react";
 import { useCreateReviewMutation } from "../../../redux/apis/review.api";
 
 const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
@@ -6,68 +6,22 @@ const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
 const StarRating = ({
   rating,
   setRating,
-  setTouched,
 }: {
   rating: number;
   setRating: (n: number) => void;
-  setTouched: (n: boolean) => void;
 }) => {
   const [hovered, setHovered] = useState(0);
-  const starRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  const handleKey = (e: React.KeyboardEvent, star: number) => {
-    let nextStar = star;
-
-    if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-      e.preventDefault();
-      nextStar = Math.min(5, star + 1);
-    }
-
-    if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-      e.preventDefault();
-      nextStar = Math.max(1, star - 1);
-    }
-
-    if (e.key === "Home") {
-      e.preventDefault();
-      nextStar = 1;
-    }
-
-    if (e.key === "End") {
-      e.preventDefault();
-      nextStar = 5;
-    }
-
-    if (nextStar !== star) {
-      setTouched(true);
-      setRating(nextStar);
-      starRefs.current[nextStar - 1]?.focus();
-    }
-  };
 
   return (
     <div className="space-y-2">
-      <div
-        role="radiogroup"
-        aria-label="Rating"
-        className="flex gap-2"
-      >
+      <div className="flex gap-2">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
-            ref={(element) => {
-              starRefs.current[star - 1] = element;
-            }}
             type="button"
-            role="radio"
-            aria-checked={rating === star}
+            aria-pressed={rating === star}
             aria-label={`Rate ${star} star`}
-            tabIndex={rating === star || (!rating && star === 1) ? 0 : -1}
-            onClick={() => {
-              setTouched(true);
-              setRating(star);
-            }}
-            onKeyDown={(e) => handleKey(e, star)}
+            onClick={() => setRating(star)}
             onMouseEnter={() => setHovered(star)}
             onMouseLeave={() => setHovered(0)}
             className={`text-3xl transition-all duration-200 hover:scale-125 hover:-translate-y-1 focus:outline-none ${
@@ -97,11 +51,10 @@ const ReviewForm = () => {
   const [rating, setRating] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const [createReview, { isLoading }] = useCreateReviewMutation();
 
-  const validate = useCallback(() => {
+  const validate = () => {
     const newErrors: Record<string, string> = {};
 
     if (!name.trim()) newErrors.name = "Name is required";
@@ -111,25 +64,9 @@ const ReviewForm = () => {
     if (rating === 0) newErrors.rating = "Please select a rating";
 
     return newErrors;
-  }, [name, role, feedback, rating]);
-
-  // Derived state: is the form valid for enabling submit
-  const isFormValid = useMemo(() => Object.keys(validate()).length === 0, [validate]);
-
-  // Live validation for touched fields
-  useEffect(() => {
-    const v = validate();
-    const visibleErrors: Record<string, string> = {};
-    Object.keys(v).forEach((k) => {
-      if (touched[k]) visibleErrors[k] = v[k];
-    });
-    setErrors(visibleErrors);
-  }, [validate, touched]);
+  };
 
   const handleSubmit = async () => {
-    // mark all as touched so errors show if present
-    setTouched({ name: true, role: true, feedback: true, rating: true });
-
     const newErrors = validate();
 
     if (Object.keys(newErrors).length > 0) {
@@ -155,19 +92,6 @@ const ReviewForm = () => {
     } catch {
       setErrors({
         submit: "Failed to submit review. Please try again.",
-      });
-    }
-  };
-
-  // helper to update rating and clear rating errors if present
-  const handleSetRating = (n: number) => {
-    setTouched((prev) => ({ ...prev, rating: true }));
-    setRating(n);
-    if (errors.rating) {
-      setErrors((prev) => {
-        const copy = { ...prev };
-        delete copy.rating;
-        return copy;
       });
     }
   };
@@ -236,7 +160,6 @@ const ReviewForm = () => {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onBlur={() => setTouched((t) => ({ ...t, name: true }))}
                 placeholder="Your full name"
                 aria-invalid={!!errors.name}
                 className="w-full max-w-lg rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 transition-all duration-200 focus:border-blue-500/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -266,7 +189,6 @@ const ReviewForm = () => {
                 type="text"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                onBlur={() => setTouched((t) => ({ ...t, role: true }))}
                 placeholder="e.g. Fantasy Writer, Student, Blogger"
                 aria-invalid={!!errors.role}
                 className="w-full max-w-lg rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 transition-all duration-200 focus:border-blue-500/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -297,10 +219,8 @@ const ReviewForm = () => {
                 maxLength={500}
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
-                onBlur={() => setTouched((t) => ({ ...t, feedback: true }))}
                 placeholder="Tell us about your experience with StorySparkAI..."
                 aria-invalid={!!errors.feedback}
-                aria-describedby="feedback-counter"
                 className="w-full max-w-lg resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 transition-all duration-200 focus:border-blue-500/60 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
 
@@ -315,12 +235,11 @@ const ReviewForm = () => {
                 )}
 
                 <p
-                  id="feedback-counter"
                   className={`text-xs ${
-                    500 - feedback.length <= 50 ? "text-yellow-400" : "text-gray-500"
+                    feedback.length > 450 ? "text-yellow-400" : "text-gray-500"
                   }`}
                 >
-                  {500 - feedback.length} characters remaining
+                  {feedback.length}/500
                 </p>
               </div>
             </div>
@@ -333,11 +252,7 @@ const ReviewForm = () => {
                 <span className="text-red-400">*</span>
               </label>
 
-              <StarRating
-                rating={rating}
-                setRating={handleSetRating}
-                setTouched={(value) => setTouched((prev) => ({ ...prev, rating: value }))}
-              />
+              <StarRating rating={rating} setRating={setRating} />
 
               <p className="mt-2 text-xs text-gray-500">
                 Select a rating based on your overall experience.
@@ -355,9 +270,9 @@ const ReviewForm = () => {
               <button
                 type="button"
                 onClick={handleSubmit}
-              disabled={!isFormValid || isLoading}
+                disabled={isLoading}
                 className="w-auto rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:from-blue-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-blue-500/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-            >
+              >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg
@@ -385,10 +300,12 @@ const ReviewForm = () => {
                 "Share Review ✨"
               )}
             </button>
-            </div>
-          </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+  );
     </div>
   );
 };
