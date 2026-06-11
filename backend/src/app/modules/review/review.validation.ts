@@ -13,7 +13,9 @@ const createReview = z.object({
         required_error: "Feedback is required!",
       })
       .min(10, "Feedback must be at least 10 characters long"),
+
     imgSrc: z.string().optional(),
+
     rating: z.number().min(1).max(5).optional(),
   }),
 });

@@ -30,15 +30,16 @@ const reviewApi = baseApi.injectEndpoints({
       }),
     }),
     createReview: build.mutation({
-      query: (payload: {
+      query: (body: {
         name: string;
         role: string;
         feedback: string;
-        rating: number;
+        rating?: number;
+        imgSrc?: string;
       }) => ({
         url: "/review/create",
         method: "POST",
-        data: payload,
+        data: body,
       }),
     }),
   }),
