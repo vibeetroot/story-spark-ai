@@ -1,254 +1,175 @@
-import { JSX, useEffect, useState } from "react";
-import WritingAssistantComponent from "./components/writing-assistant/writing_assistant.component";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import HeroSectionComponent from "./components/hero/hero_section.component";
-import HomeComponent from "./components/home/home.component";
-import LoginComponent from "./components/login/login.component";
-import SignUpComponent from "./components/signup/signup.component";
-import DashboardComponent from "./components/dashboard/dashboard.component";
+import React, { lazy, Suspense } from "react";
+import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
+
+import { USER_ROLE } from "./constants/role";
+
 import RootLayout from "./components/layout/root_layout.component";
 import DashboardLayout from "./components/dashboard/dashboard_layout.component";
-import SettingComponent from "./components/dashboard/settings/settings.component";
-import StoriesComponent from "./components/stories/stories.component";
-import WriterApplicationComponent from "./components/dashboard/writers/writer_application.component";
-import UserComponent from "./components/dashboard/users/user.component";
-import PricingComponent from "./components/pricing/pricing.component";
-import ExploreComponent from "./components/post/post.component";
-import PostDetailsComponent from "./components/post/post.details.component";
-import BookmarksComponent from "./components/post/bookmarks.component";
-import { getUserInfo } from "./services/auth.service";
-import UserListComponent from "./components/dashboard/users/user.list.component";
+import LoadingAnimation from "./components/loading/loading.component";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTopButton from "./components/ScrollToTopButton";
+import ScrollToTop from "./components/ScrollToTop";
+import MagicCursorComponent from "./components/magic-cursor/magic_cursor.component";
+import HeroSectionComponent from "./components/hero/hero_section.component";
+import HomeComponent from "./components/home/home.component";
 import NotFoundComponent from "./components/not-found.component";
-import EmailValidationComponent from "./components/email_validation/email.validation.component";
-import { USER_ROLE } from "./constants/role";
-import PostListsComponent from "./components/dashboard/posts/post_lists.component";
-import ProfileComponent from "./components/dashboard/profile/profile.component";
-import AboutUsComponent from "./components/footer/about-us.tsx";
-import CareerComponent from "./components/footer/career.tsx";
-import ContactUsComponent from "./components/footer/contact-us.tsx";
-import BlogComponent from "./components/footer/blog.tsx";
-import HelpCenterComponent from "./components/footer/help-center.tsx";
-import GuidelinesComponent from "./components/footer/guidelines.tsx";
-import TemplatesComponent from "./components/templates/templates.component";
-import CommunityComponent from "./components/community/community.component";
-const ProtectedRoute = ({
-  element,
-  allowedRoles,
-}: {
-  element: JSX.Element;
-  allowedRoles: string[];
-}) => {
-  const user = getUserInfo();
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-  if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  return element;
-};
+
+// Lazy-loaded page components
+const TemplatesComponent = lazy(() => import("./components/templates/templates.component"));
+const WritingAssistantComponent = lazy(() => import("./components/writing-assistant/writing_assistant.component"));
+const StoryInspirationWrapper = lazy(() => import("./components/StoryInspirationWrapper"));
+const LoginComponent = lazy(() => import("./components/login/login.component"));
+const SignUpComponent = lazy(() => import("./components/signup/signup.component"));
+const ForgotPasswordComponent = lazy(() => import("./components/login/forgot_password.component"));
+const PricingComponent = lazy(() => import("./components/pricing/pricing.component"));
+const PostDetailsComponent = lazy(() => import("./components/post/post.details.component"));
+const Contact = lazy(() => import("./components/contactus/contactus"));
+const AboutUsComponent = lazy(() => import("./components/footer/about-us.tsx"));
+const CareerComponent = lazy(() => import("./components/footer/career.tsx"));
+const BlogComponent = lazy(() => import("./components/footer/blog.tsx"));
+const PrivacyPolicy = lazy(() => import("./components/footer/Privacy.tsx"));
+const CookiePolicy = lazy(() => import("./components/footer/cookie-policy.tsx"));
+const Terms = lazy(() => import("./components/footer/terms.tsx"));
+const HelpCenterComponent = lazy(() => import("./components/help_center/help_center.component"));
+const GuidelinesComponent = lazy(() => import("./components/footer/guidelines.tsx"));
+const ContributorsComponent = lazy(() => import("./components/footer/contributors.tsx"));
+const ReportBug = lazy(() => import("./components/report-bug/ReportBug"));
+const ExploreComponent = lazy(() => import("./components/post/post.component"));
+const BookmarksComponent = lazy(() => import("./components/post/bookmarks.component"));
+const CommunityComponent = lazy(() => import("./components/community/community.component"));
+const ResourcesListComponent = lazy(() => import("./components/community/resources_list.component"));
+const ResourceDetailComponent = lazy(() => import("./components/community/resource_detail.component"));
+const StoriesComponent = lazy(() => import("./components/stories/stories.component"));
+const BranchingStory = lazy(() => import("./components/stories/BranchingStory"));
+const StoryWorkspace = lazy(() => import("./components/story/StoryWorkspace"));
+const CollabHome = lazy(() => import("./components/collab/CollabHome"));
+const CollabRoom = lazy(() => import("./components/collab/CollabRoom"));
+const DashboardComponent = lazy(() => import("./components/dashboard/dashboard.component"));
+const ProfileComponent = lazy(() => import("./components/dashboard/profile/profile.component"));
+const WriterApplicationComponent = lazy(() => import("./components/dashboard/writers/writer_application.component"));
+const UserComponent = lazy(() => import("./components/dashboard/users/user.component"));
+const SettingComponent = lazy(() => import("./components/dashboard/settings/settings.component"));
+const PublishedStoriesComponent = lazy(() => import("./components/dashboard/posts/published_stories.component"));
+const AnalyticsPage = lazy(() => import("./components/dashboard/analytics/analytics.page"));
+const PostListsComponent = lazy(() => import("./components/dashboard/posts/post_lists.component"));
+const EmailValidationComponent = lazy(() => import("./components/email_validation/email.validation.component"));
+const PaymentComponent = lazy(() =>
+  import("./components/home/pricing/payment.component").then((module) => ({
+    default: module.PaymentComponent,
+  }))
+);
+
+const ALL_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER, USER_ROLE.USER];
+const ELEVATED_ADMIN_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN];
+const WRITER_PLUS_ADMIN_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER];
+
+const lazyPage = (element: React.ReactElement) => (
+  <Suspense fallback={<LoadingAnimation />}>{element}</Suspense>
+);
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: (
+      <>
+        <ScrollToTopButton />
+        <MagicCursorComponent />
+        <ScrollToTop />
+        <RootLayout>
+          <Suspense fallback={<LoadingAnimation />}>
+            <Outlet />
+          </Suspense>
+        </RootLayout>
+      </>
+    ),
+    children: [
+      { index: true, element: <><HeroSectionComponent /><HomeComponent /></> },
+      { path: "templates", element: <TemplatesComponent /> },
+      { path: "writing-assistant", element: <WritingAssistantComponent /> },
+      { path: "story-inspiration", element: <StoryInspirationWrapper /> },
+      { path: "login", element: <LoginComponent /> },
+      { path: "signup", element: <SignUpComponent /> },
+      { path: "forgot-password", element: <ForgotPasswordComponent /> },
+      { path: "pricing", element: <PricingComponent /> },
+      { path: "post/:id", element: <PostDetailsComponent /> },
+      { path: "contact-us", element: <Contact /> },
+      { path: "about-us", element: <AboutUsComponent /> },
+      { path: "career", element: <CareerComponent /> },
+      { path: "blog", element: <BlogComponent /> },
+      { path: "privacy-policy", element: <PrivacyPolicy /> },
+      { path: "cookie-policy", element: <CookiePolicy /> },
+      { path: "terms", element: <Terms /> },
+      { path: "help-center", element: <HelpCenterComponent /> },
+      { path: "guidelines", element: <GuidelinesComponent /> },
+      { path: "contributors", element: <SafeContributorsComponent /> },
+      { path: "contributors", element: <ContributorsComponent /> },
+      { path: "community", element: <CommunityComponent /> },
+      { path: "report-bug", element: <ReportBug /> },
+      {
+        element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
+        children: [
+          { path: "explore", element: <ExploreComponent /> },
+          { path: "bookmarks", element: <BookmarksComponent /> },
+          { path: "resources", element: <ResourcesListComponent /> },
+          { path: "resources/:resourceName", element: <ResourceDetailComponent /> },
+          { path: "stories", element: <StoriesComponent /> },
+          { path: "branching-story", element: <BranchingStory /> },
+          { path: "story-workspace", element: <StoryWorkspace /> },
+        ],
+      },
+      { path: "*", element: <NotFoundComponent /> },
+    ],
+  },
+  {
+    path: "/auth/email-validation",
+    element: lazyPage(<EmailValidationComponent />),
+  },
+  {
+    element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
+    children: [
+      { path: "/payment", element: lazyPage(<PaymentComponent />) },
+      { path: "/collab", element: lazyPage(<CollabHome />) },
+      { path: "/collab/:roomId", element: lazyPage(<CollabRoom />) },
+    ],
+  },
+  {
+    path: "/dashboard",
+    element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
+    children: [
+      {
+        element: (
+          <Suspense fallback={<LoadingAnimation />}>
+            <DashboardLayout />
+          </Suspense>
+        ),
+        children: [
+          { index: true, element: <DashboardComponent /> },
+          { path: "profile", element: <ProfileComponent /> },
+          { path: "settings", element: <SettingComponent /> },
+          { path: "published-stories", element: <PublishedStoriesComponent /> },
+          {
+            element: <ProtectedRoute allowedRoles={ELEVATED_ADMIN_ROLES} />,
+            children: [
+              { path: "writers", element: <WriterApplicationComponent /> },
+              { path: "users", element: <UserComponent /> },
+            ],
+          },
+          {
+            element: <ProtectedRoute allowedRoles={[USER_ROLE.WRITER]} />,
+            children: [{ path: "analytics", element: <AnalyticsPage /> }],
+          },
+          {
+            element: <ProtectedRoute allowedRoles={WRITER_PLUS_ADMIN_ROLES} />,
+            children: [{ path: "post-lists", element: <PostListsComponent /> }],
+          },
+        ],
+      },
+    ],
+  },
+]);
 
 function App() {
-
-
-  const [darkMode, setDarkMode] = useState(
-    localStorage.getItem("theme") === "dark"
-  );
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
-  return (
-    <Router>
-
-      {/* Dark Mode Toggle Button */}
-      {/* <div className="fixed top-4 right-4 z-50">
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-4 py-2 rounded-md bg-black text-white dark:bg-white dark:text-black transition-colors duration-300 shadow-md"
-        >
-          {darkMode ? "☀️ Light" : "🌙 Dark"}
-        </button>
-      </div> */}
-
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <RootLayout>
-              <HeroSectionComponent />
-              <HomeComponent />
-            </RootLayout>
-          }
-        />
-        <Route
-          path="/templates"
-          element={
-            <RootLayout>
-              <TemplatesComponent />
-            </RootLayout>
-          }
-        />
-        <Route
-          path="/writing-assistant"
-          element={
-            <RootLayout>
-              <WritingAssistantComponent />
-            </RootLayout>
-          }
-        />
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardComponent />} />
-
-          <Route
-            path="post-lists"
-            element={
-              <ProtectedRoute
-                element={<PostListsComponent />}
-                allowedRoles={[
-                  USER_ROLE.USER,
-                  USER_ROLE.ADMIN,
-                  USER_ROLE.SUPER_ADMIN,
-                  USER_ROLE.WRITER,
-                ]}
-              />
-            }
-          />
-
-          <Route
-            path="settings"
-            element={
-              <ProtectedRoute
-                element={<SettingComponent />}
-                allowedRoles={[USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN]}
-              />
-            }
-          />
-
-          <Route
-            path="profile"
-            element={
-              <ProtectedRoute
-                element={<ProfileComponent />}
-                allowedRoles={[
-                  USER_ROLE.USER,
-                  USER_ROLE.ADMIN,
-                  USER_ROLE.SUPER_ADMIN,
-                  USER_ROLE.WRITER,
-                ]}
-              />
-            }
-          />
-
-          <Route path="users">
-            <Route
-              index
-              element={
-                <ProtectedRoute
-                  element={<UserComponent />}
-                  allowedRoles={[
-                    USER_ROLE.USER,
-                    USER_ROLE.ADMIN,
-                    USER_ROLE.SUPER_ADMIN,
-                    USER_ROLE.WRITER,
-                  ]}
-                />
-              }
-            />
-
-            <Route
-              path="list"
-              element={
-                <ProtectedRoute
-                  element={<UserListComponent />}
-                  allowedRoles={[
-                    USER_ROLE.USER,
-                    USER_ROLE.ADMIN,
-                    USER_ROLE.SUPER_ADMIN,
-                    USER_ROLE.WRITER,
-                  ]}
-                />
-              }
-            />
-          </Route>
-
-          <Route
-            path="writers"
-            element={
-              <ProtectedRoute
-                element={<WriterApplicationComponent />}
-                allowedRoles={[
-                  USER_ROLE.WRITER,
-                  USER_ROLE.ADMIN,
-                  USER_ROLE.SUPER_ADMIN,
-                  USER_ROLE.USER,
-                ]}
-              />
-            }
-          />
-        </Route>
-
-        <Route path="/stories" element={<StoriesComponent />} />
-        <Route path="/login" element={<LoginComponent />} />
-
-        <Route
-          path="/auth/email-validation"
-          element={<EmailValidationComponent />}
-        />
-
-        <Route path="/signup" element={<SignUpComponent />} />
-        <Route path="/pricing" element={<PricingComponent />} />
-        <Route path="/explore" element={<ExploreComponent />} />
-        <Route
-          path="/bookmarks"
-          element={
-            <ProtectedRoute
-              element={
-                <RootLayout>
-                  <BookmarksComponent />
-                </RootLayout>
-              }
-              allowedRoles={[
-                USER_ROLE.USER,
-                USER_ROLE.WRITER,
-                USER_ROLE.ADMIN,
-                USER_ROLE.SUPER_ADMIN,
-              ]}
-            />
-          }
-        />
-        <Route
-          path="/community"
-          element={
-            <RootLayout>
-              <CommunityComponent />
-            </RootLayout>
-          }
-        />
-        <Route path="/post/:id" element={<PostDetailsComponent />} />
-        <Route path="/about-us" element={<AboutUsComponent />} />
-        <Route path="/career" element={<CareerComponent />} />
-        <Route path="/contact-us" element={<ContactUsComponent />} />
-        <Route path="/blog" element={<BlogComponent />} />
-        <Route path="/help-center" element={<HelpCenterComponent />} />
-        <Route path="/guidelines" element={<GuidelinesComponent />} />
-        <Route path="/community" element={<CommunityComponent />} />
-        <Route path="*" element={<NotFoundComponent />} />
-      </Routes>
-
-    </Router>
-  );
+  return <RouterProvider router={router} />;
 }
+
 export default App;

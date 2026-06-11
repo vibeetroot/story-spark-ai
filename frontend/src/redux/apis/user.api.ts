@@ -22,7 +22,6 @@ const userApi = baseApi.injectEndpoints({
       transformResponse: (response: { data: User[]; message: string }) => {
         return { data: response.data };
       },
-
       providesTags: [tagTypes.user],
     }),
     getProfileInfo: build.query<User, void>({
@@ -45,6 +44,30 @@ const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.user],
     }),
+    updateWritingGoals: build.mutation({
+      query: (data) => ({
+        url: `/${USER_URL}/update`,
+        method: "PATCH",
+        data: data,
+      }),
+      invalidatesTags: [tagTypes.user],
+    }),
+    toggleFollow: build.mutation({
+      query: (authorId: string) => ({
+        url: `/${USER_URL}/follow/${authorId}`,
+        method: "POST",
+      }),
+      invalidatesTags: [tagTypes.user],
+    }),
+    getFollowStatus: build.query({
+      query: (authorId: string) => ({
+        url: `/${USER_URL}/follow-status/${authorId}`,
+        method: "GET",
+      }),
+      transformResponse: (response: { data: { isFollowing: boolean } }) =>
+        response.data,
+      providesTags: [tagTypes.user],
+    }),
   }),
 });
 
@@ -53,4 +76,7 @@ export const {
   useGetUsersListQuery,
   useGetProfileInfoQuery,
   useUpdateProfileMutation,
+  useUpdateWritingGoalsMutation,
+  useToggleFollowMutation,
+  useGetFollowStatusQuery,
 } = userApi;

@@ -1,11 +1,19 @@
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import {
+  getUserInfo,
+  removeUserInfo,
+  storeUserInfo,
+} from "../services/auth.service";
+import { AUTH_KEY } from "../constants/storage-key";
 
 interface User {
-  id: number;
+  id: string;
   name: string;
+  email: string;
   role: string;
+  postsCount?: number;
+  subscriptionType?: string;
 }
 
 interface AuthContextType {
@@ -19,7 +27,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [accessToken, setAccessToken] = useState<string | null>(
-    localStorage.getItem("accessToken")
+    localStorage.getItem(AUTH_KEY),
   );
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
@@ -27,36 +35,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = useCallback(() => {
     setAccessToken(null);
     setUser(null);
-    localStorage.removeItem("accessToken");
+    removeUserInfo(); // handles localStorage removal via AUTH_KEY
     navigate("/login");
   }, [navigate]);
 
-  const fetchUserInfo = useCallback(
-    async (token: string) => {
-      try {
-        const response = await axios.get("https://api.example.com/user-info", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
-      } catch (error) {
-        console.error("Error fetching user info:", error);
-        logout();
-      }
-    },
-    [logout]
-  );
-
   const login = async (token: string) => {
     setAccessToken(token);
-    localStorage.setItem("accessToken", token);
-    await fetchUserInfo(token);
+    storeUserInfo({ accessToken: token }); // single source of truth for token storage
+
+    const userInfo = getUserInfo();
+    if (userInfo) {
+      setUser({
+        id: userInfo.userId,
+        name: userInfo.name,
+        email: userInfo.email,
+        role: userInfo.role,
+        postsCount: userInfo.postsCount,
+        subscriptionType: userInfo.subscriptionType,
+      });
+    }
   };
 
   useEffect(() => {
-    if (accessToken) {
-      fetchUserInfo(accessToken);
+    if (!accessToken) return;
+
+    try {
+      const userInfo = getUserInfo();
+
+      if (!userInfo || !userInfo.userId) {
+        logout();
+        return;
+      }
+
+      if (userInfo.exp * 1000 < Date.now()) {
+        logout();
+        return;
+      }
+
+      setUser({
+        id: userInfo.userId,
+        name: userInfo.name,
+        email: userInfo.email,
+        role: userInfo.role,
+        postsCount: userInfo.postsCount,
+        subscriptionType: userInfo.subscriptionType,
+      });
+    } catch (error) {
+      console.error("Invalid token:", error);
+      logout();
     }
-  }, [accessToken, fetchUserInfo]);
+  }, [accessToken, logout]);
 
   return (
     <AuthContext.Provider value={{ accessToken, user, login, logout }}>

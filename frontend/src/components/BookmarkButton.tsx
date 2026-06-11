@@ -2,17 +2,18 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { getUserInfo } from "../services/auth.service";
-import { useToggleBookmarkMutation } from "../redux/apis/bookmark.api";
+import {
+  useToggleBookmarkMutation,
+  useCheckBookmarkStatusQuery,
+} from "../redux/apis/bookmark.api";
 
 interface BookmarkButtonProps {
   storyId: string;
-  bookmarks?: any[];
   className?: string;
 }
 
 const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   storyId,
-  bookmarks = [],
   className = "",
 }) => {
   const navigate = useNavigate();
@@ -20,10 +21,11 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   const [toggleBookmark] = useToggleBookmarkMutation();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Determine if currently bookmarked by logged in user
-  const isCurrentlyBookmarked = bookmarks.some(
-    (b: any) => b.email === currentUser?.email
-  );
+  // Bookmark state comes from the per-user status endpoint (single source of truth).
+  const { data: statusData } = useCheckBookmarkStatusQuery(storyId, {
+    skip: !currentUser?.userId || !storyId,
+  });
+  const isCurrentlyBookmarked = Boolean(statusData?.isBookmarked);
 
   const handleBookmark = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -40,9 +42,12 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({
       if (response.success) {
         toast.success(response.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to toggle bookmark", error);
-      toast.error(error?.data?.message || "Something went wrong. Please try again.");
+      const message =
+        (error as { data?: { message?: string } })?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -53,6 +58,7 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({
       onClick={handleBookmark}
       disabled={isLoading}
       title={isCurrentlyBookmarked ? "Remove bookmark" : "Save story"}
+      aria-label={isCurrentlyBookmarked ? "Remove bookmark" : "Save story"}
       className={`!rounded-button cursor-pointer transition-all duration-300 border px-3 py-1 flex items-center justify-center hover:scale-105 active:scale-95 ${
         isCurrentlyBookmarked
           ? "text-purple-400 border-purple-500/50 bg-purple-500/10 hover:bg-purple-500/20 hover:text-purple-300"

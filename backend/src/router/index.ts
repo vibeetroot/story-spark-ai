@@ -7,8 +7,26 @@ import { PostRouter } from "../app/modules/post/post.router";
 import { NotificationRouter } from "../app/modules/notification/notification.router";
 import { CommentRouter } from "../app/modules/comment/comment.router";
 import { AnalysisRouter } from "../app/modules/analysis/analysis.router";
+import { ReviewRouter } from "../app/modules/review/review.router";
 import { ReactionRouter } from "../app/modules/reaction/reaction.router";
+import { ContactRoutes } from "../app/modules/contact/contact.route";
+import { StoriesRouter } from "../routes/stories";
+import storyRoutes from "../routes/story.routes";
+import { ReportRouter } from "../app/modules/report/report.router";
+import { NewsletterRouter } from "../app/modules/newsletter/newsletter.route";
+import paymentRouter from "../router/payment.route";
+import { AIEditorRouter } from "../app/modules/ai_editor/ai_editor.router";
 import { BookmarkRouter } from "../app/modules/bookmark/bookmark.router";
+import { StoryVersionRouter } from "../app/modules/story_version/story_version.router";
+import { AnalyticsRouter } from "../app/modules/analytics/analytics.router";
+import { BugReportRouter } from "../app/modules/bug_report/bug_report.router";
+import { RecommendationRouter } from "../app/modules/recommendation/recommendation.router";
+import { WriterApplicationRoutes } from "../app/modules/writer_application/writer_application.route";
+import { StoryVisualizerRouter } from "../app/modules/story_visualizer/story_visualizer.router";
+import { StoryInspirationRouter } from "../app/modules/story_inspiration/story_inspiration.router";
+import { EngagementRouter } from "../app/modules/engagement/engagement.router";
+import { ChatRouter } from "../app/modules/chat/chat.router";
+
 const router = express.Router();
 
 const modules = [
@@ -19,6 +37,14 @@ const modules = [
   {
     path: "/user",
     router: UserRouter,
+  },
+  {
+    path: "/users",
+    router: UserRouter,
+  },
+  {
+    path: "/review",
+    router: ReviewRouter,
   },
   {
     path: "/ai_model",
@@ -49,8 +75,68 @@ const modules = [
     router: ReactionRouter,
   },
   {
+    path: "/newsletter",
+    router: NewsletterRouter,
+  },
+  {
     path: "/bookmarks",
     router: BookmarkRouter,
+  },
+  {
+    path: "/payment",
+    router: paymentRouter,
+  },
+  {
+    path: "/story",
+    router: StoryVersionRouter,
+  },
+  {
+    path: "/analytics",
+    router: AnalyticsRouter,
+  },
+  {
+    path: "/stories",
+    router: StoriesRouter,
+  },
+  {
+    path: "/story-continuation",
+    router: storyRoutes,
+  },
+  {
+    path: "/story-inspiration",
+    router: StoryInspirationRouter,
+  },
+  {
+    path: "/engagement",
+    router: EngagementRouter,
+  },
+  {
+    path: "/contact",
+    router: ContactRoutes,
+  },
+  {
+    path: "/reports",
+    router: ReportRouter,
+  },
+  {
+    path: "/bug-reports",
+    router: BugReportRouter,
+  },
+  {
+    path: "/recommendations",
+    router: RecommendationRouter,
+  },
+  {
+    path: "/writer-applications",
+    router: WriterApplicationRoutes,
+  },
+  {
+    path: "/ai-editor",
+    router: AIEditorRouter,
+  },
+  {
+    path: "/chat",
+    router: ChatRouter,
   },
 ];
 
