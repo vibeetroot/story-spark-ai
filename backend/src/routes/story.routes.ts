@@ -30,7 +30,7 @@ router.post(
   validateRequest(AIModelValidator.aiStoryContinuation),
   catchAsync(async (req: Request, res: Response) => {
     const { prompt, language } = req.body as { prompt: string; language?: string };
-    const result = await AiModelService.aiFreeStoryContinuation({ prompt, language });
+    const result = await AiModelService.aiModelStoryContinuation({ prompt, language });
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,

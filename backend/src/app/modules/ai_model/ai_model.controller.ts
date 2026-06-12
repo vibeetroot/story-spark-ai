@@ -25,7 +25,8 @@ const aiModelGenerate = catchAsync(async (req: Request, res: Response) => {
   }
 
   await runWithQuotaCleanup(guard, async () => {
-    const result = await AiModelService.aiModelGenerate(prompt);
+    const userId = (req as any).user?._id || (req as any).user?.id;
+    const result = await AiModelService.aiModelGenerate(prompt, userId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -47,7 +48,7 @@ const aiFreeModelGenerate = catchAsync(async (req: Request, res: Response) => {
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
     await reserveGuestQuota(userId);
-    const result = await AiModelService.aiFreeModelGenerate(prompt);
+    const result = await AiModelService.aiModelGenerate(prompt);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -69,7 +70,8 @@ const aiModelAlternateEndings = catchAsync(async (req: Request, res: Response) =
   }
 
   await runWithQuotaCleanup(guard, async () => {
-    const result = await AiModelService.aiModelAlternateEndings(payload);
+    const userId = (req as any).user?._id || (req as any).user?.id;
+    const result = await AiModelService.aiModelAlternateEndings(payload, userId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -92,7 +94,7 @@ const aiFreeModelAlternateEndings = catchAsync(
     const guard = createGuestQuotaGuard(userId);
     await runWithQuotaCleanup(guard, async () => {
       await reserveGuestQuota(userId);
-      const result = await AiModelService.aiFreeModelAlternateEndings(payload);
+      const result = await AiModelService.aiModelAlternateEndings(payload);
       sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -107,7 +109,7 @@ const aiModelGenerateStream = async (req: Request, res: Response) => {
   const { prompt, wordLength, numStories } = req.body;
   const guard = res.locals.quotaRefundGuard;
 
-  if (!guard) {                                           // ← ADD
+  if (!guard) {
     res.status(500).json({ error: "Quota guard missing" });
     return;
   }
@@ -123,27 +125,28 @@ const aiModelGenerateStream = async (req: Request, res: Response) => {
     controller.abort();
   });
 
-await runWithQuotaCleanup(guard, async () => {
-  try {
-    await generateWithGeminiStoriesStream(
-      prompt,
-      wordLength ?? 250,
-      numStories ?? 2,
-      (chunk: string) => {
-        res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
-      },
-      controller.signal
-    );
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    res.end();
+  await runWithQuotaCleanup(guard, async () => {
+    try {
+      await generateWithGeminiStoriesStream(
+        prompt,
+        wordLength ?? 250,
+        numStories ?? 2,
+        (chunk: string) => {
+          res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+        },
+        controller.signal
+      );
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
     } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    res.write(`data: ${JSON.stringify({ error: errorMsg })}\n\n`);
-    res.end();
-    throw error;
-  }
-});
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      res.write(`data: ${JSON.stringify({ error: errorMsg })}\n\n`);
+      res.end();
+      throw error;
+    }
+  });
 };
+
 const aiModelRemix = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body as IRemixPayload;
   const guard = res.locals.quotaRefundGuard;
@@ -156,7 +159,8 @@ const aiModelRemix = catchAsync(async (req: Request, res: Response) => {
   }
 
   await runWithQuotaCleanup(guard, async () => {
-    const result = await AiModelService.aiModelRemix(payload);
+    const userId = (req as any).user?._id || (req as any).user?.id;
+    const result = await AiModelService.aiModelRemix(payload, userId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -178,7 +182,7 @@ const aiFreeModelRemix = catchAsync(async (req: Request, res: Response) => {
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
     await reserveGuestQuota(userId);
-    const result = await AiModelService.aiFreeModelRemix(payload);
+    const result = await AiModelService.aiModelRemix(payload);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -200,7 +204,8 @@ const aiModelTranslate = catchAsync(async (req: Request, res: Response) => {
   }
 
   await runWithQuotaCleanup(guard, async () => {
-    const result = await AiModelService.aiModelTranslate(payload);
+    const userId = (req as any).user?._id || (req as any).user?.id;
+    const result = await AiModelService.aiModelTranslate(payload, userId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -222,7 +227,7 @@ const aiFreeModelTranslate = catchAsync(async (req: Request, res: Response) => {
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
     await reserveGuestQuota(userId);
-    const result = await AiModelService.aiFreeModelTranslate(payload);
+    const result = await AiModelService.aiModelTranslate(payload);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -244,7 +249,8 @@ const aiModelChat = catchAsync(async (req: Request, res: Response) => {
   }
 
   await runWithQuotaCleanup(guard, async () => {
-    const result = await AiModelService.aiModelChat(payload);
+    const userId = (req as any).user?._id || (req as any).user?.id;
+    const result = await AiModelService.aiModelChat(payload, userId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -266,7 +272,7 @@ const aiFreeModelChat = catchAsync(async (req: Request, res: Response) => {
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
     await reserveGuestQuota(userId);
-    const result = await AiModelService.aiFreeModelChat(payload);
+    const result = await AiModelService.aiModelChat(payload);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -288,7 +294,8 @@ const aiStoryContinuation = catchAsync(async (req: Request, res: Response) => {
   }
 
   await runWithQuotaCleanup(guard, async () => {
-    const result = await AiModelService.aiModelStoryContinuation(payload);
+    const userId = (req as any).user?._id || (req as any).user?.id;
+    const result = await AiModelService.aiModelStoryContinuation(payload, userId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -310,7 +317,7 @@ const aiFreeStoryContinuation = catchAsync(async (req: Request, res: Response) =
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
     await reserveGuestQuota(userId);
-    const result = await AiModelService.aiFreeStoryContinuation(payload);
+    const result = await AiModelService.aiModelStoryContinuation(payload);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
