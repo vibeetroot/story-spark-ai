@@ -46,6 +46,11 @@
 
 ## Features 💪
 
+- **Dark-Mode**: Toggle between light and dark themes for a comfortable reading experience.
+- **Google Login**: Sign in quickly and securely using your Google account.
+- **User Reviews**: Share your experience and explore reviews from the community.
+- **Subscription Plans**: Access unlimited story generation and team collaboration with paid plans.
+- **Featured Posts**: Discover featured posts curated from the community.
 - **AI-Powered Story Generation**: Create unique stories instantly using advanced AI models.
 - **Prompt-Based Storytelling**: Simply provide a prompt or idea and watch it come to life.
 - **Story Bookmarks/History**: Save your favorite generated stories and revisit your past creations.
@@ -377,3 +382,11 @@ Thanks to everyone who has helped build **Story Spark AI**. This grid updates au
 
 Thank you for contributing to our open-source project! We appreciate your support 🚀 <br>
 Don't forget to leave a star ⭐
+
+### Proposed Feature: Trending Topics & UI Enhancements
+- Added responsive writing genres (Fantasy, Mystery, Romance) next to recommended writers.
+- Implemented a clean 'How It Works' section to polish the landing page layout.
+
+### Proposed Feature: Trending Topics & UI Enhancements
+- Added responsive writing genres (Fantasy, Mystery, Romance) next to recommended writers.
+- Implemented a clean 'How It Works' section to polish the landing page layout.
