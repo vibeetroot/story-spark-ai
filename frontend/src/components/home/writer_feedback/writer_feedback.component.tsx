@@ -149,8 +149,7 @@ const WriterFeedbackComponent = () => {
         {/* Header */}
         <div className="mb-12 text-center">
           <span className="inline-flex items-center rounded-full border border-yellow-400/30 bg-yellow-400/10 px-4 py-2 text-sm font-medium text-yellow-600 dark:text-yellow-500">
-            ⭐ 4.9/5 Average Rating
-          </span>
+⭐ 4.9/5 Loved by Writers          </span>
 
           <h2 className="mt-6 text-4xl font-bold text-slate-900 dark:text-white">
             What Our Writers Say
