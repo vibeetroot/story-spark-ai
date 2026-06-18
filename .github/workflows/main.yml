@@ -13,52 +13,58 @@ jobs:
         with:
           fetch-depth: 0
       - name: Detect changed workspaces
+        if: github.event_name == 'pull_request'
         id: changes
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            files="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD")"
-          else
-            files="$(git diff --name-only HEAD~1 HEAD || true)"
-          fi
-
+          files="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD")"
           echo "$files"
-          if [ "${{ github.event_name }}" != "pull_request" ] || echo "$files" | grep -Eq '^frontend/(src|package\.json|tsconfig|vite\.config|tailwind\.config|postcss\.config|eslint\.config)'; then
+
+          if echo "$files" | grep -q '^frontend/'; then
             echo "frontend=true" >> "$GITHUB_OUTPUT"
           else
             echo "frontend=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if [ "${{ github.event_name }}" != "pull_request" ] || echo "$files" | grep -q '^backend/'; then
+          if echo "$files" | grep -q '^backend/'; then
             echo "backend=true" >> "$GITHUB_OUTPUT"
           else
             echo "backend=false" >> "$GITHUB_OUTPUT"
           fi
       - uses: pnpm/action-setup@v2
-        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
         with:
           version: 9.15.9
       - name: Setup Node.js
-        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: pnpm
       - name: Install dependencies
-        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
         run: pnpm install --no-frozen-lockfile
       - name: Work around npm optional dependency bug (Rollup Linux binary)
-        if: steps.changes.outputs.frontend == 'true'
         run: pnpm --filter story-spark-ai-frontend add @rollup/rollup-linux-x64-gnu
       - name: Work around npm optional dependency bug (Lightning CSS Linux binary)
-        if: steps.changes.outputs.frontend == 'true'
         run: pnpm --filter story-spark-ai-frontend add lightningcss-linux-x64-gnu
-      - name: Build backend
-        if: steps.changes.outputs.backend == 'true'
-        run: pnpm run build:backend
-      - name: Build frontend
-        if: steps.changes.outputs.frontend == 'true'
-        run: pnpm run build:frontend
-      - name: Skip build
-        if: steps.changes.outputs.backend != 'true' && steps.changes.outputs.frontend != 'true'
-        run: echo "No frontend or backend files changed; skipping build."
+      - name: Build
+        if: github.event_name != 'pull_request' || steps.changes.outputs.backend == 'true'
+        run: pnpm run build
+      - name: Validate changed frontend files
+        if: github.event_name == 'pull_request' && steps.changes.outputs.frontend == 'true' && steps.changes.outputs.backend != 'true'
+        shell: bash
+        run: |
+          files="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | grep -E '^frontend/.*\.(ts|tsx)$' | sed 's#^frontend/##' || true)"
+          if [ -z "$files" ]; then
+            echo "No frontend TypeScript files changed."
+            exit 0
+          fi
+          pnpm --filter story-spark-ai-frontend exec tsc \
+            --noEmit \
+            --jsx react-jsx \
+            --moduleResolution bundler \
+            --module ESNext \
+            --target ES2020 \
+            --lib ES2020,DOM,DOM.Iterable \
+            --types vite/client \
+            --skipLibCheck \
+            --allowSyntheticDefaultImports \
+            $files
