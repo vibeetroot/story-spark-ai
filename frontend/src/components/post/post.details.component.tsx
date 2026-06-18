@@ -1,6 +1,7 @@
 /* eslint-disable */
+import { StoryMetaTags } from "./StoryMetaTags";
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   useDeletePostMutation,
   useGetPostByIdQuery,
@@ -38,9 +39,7 @@ import {
 } from "../../redux/apis/storyVersion.api";
 
 import { toast } from "react-hot-toast";
-import ContinueStoryModal from "../stories/ContinueStoryModal";
 
-import { FaXTwitter } from "react-icons/fa6";
 
 
 interface IStoryVersion {
@@ -73,15 +72,10 @@ const PostDetailsComponent = () => {
       skip: !tag,
     }
   );
+  
 
-
-  console.log("Current Post:", post);
-  console.log("Tag:", tag);
-  console.log(
-    "Related Posts Full Data:",
-    JSON.stringify(relatedPost, null, 2)
-  );
-
+ 
+  
   const [toggleReaction] = useToggleReactionMutation();
   const [deletePost, { isLoading: isDeleting }] = useDeletePostMutation();
   const currentUser = getUserInfo();
@@ -102,20 +96,19 @@ const PostDetailsComponent = () => {
   const isFollowing = followData?.isFollowing ?? false;
 
   useEffect(() => {
-    const updateProgress = () => {
-      const article = articleRef.current;
-      if (!article) return;
-      const { top, height } = article.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const scrolled = Math.max(0, -top);
-      const total = Math.max(1, height - windowHeight);
-      setReadingProgress(Math.min(100, (scrolled / total) * 100));
-    };
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    return () => window.removeEventListener("scroll", updateProgress);
+  const updateProgress = () => {
+    const article = articleRef.current;
+    if (!article) return;
+    const { top, height } = article.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const scrolled = Math.max(0, -top);
+    const total = Math.max(1, height - windowHeight);
+    setReadingProgress(Math.min(100, (scrolled / total) * 100));
+  };
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  return () => window.removeEventListener("scroll", updateProgress);
   }, []);
 
-  // New Version Timeline and Editor States
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [editedContent, setEditedContent] = useState("");
@@ -124,12 +117,11 @@ const PostDetailsComponent = () => {
   const [showTree, setShowTree] = useState(false);
   const [selectedVersionForBranch, setSelectedVersionForBranch] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
-  const [showContinueModal, setShowContinueModal] = useState(false);
 
   const [updatePost, { isLoading: isUpdating }] = useUpdatePostMutation();
   const readerPreferences = useReaderPreferences();
   const { data: versions, isLoading: isLoadingVersions } = useGetVersionsByStoryIdQuery(id || "", {
-    skip: !id || !showTimeline,
+    skip: !id || (!showTimeline && !showComparison),
   });
   const [restoreVersion, { isLoading: isRestoring }] = useRestoreVersionMutation();
   useEffect(() => {
@@ -142,7 +134,7 @@ const PostDetailsComponent = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { data: storyTree } = useGetStoryTreeQuery(id || "", { skip: !id || !showTree, });
+  const { data: storyTree } = useGetStoryTreeQuery(id || "", { skip: !id || !showTree,});
 
   const [createBranchVersion] = useCreateBranchVersionMutation();
 
@@ -173,7 +165,7 @@ const PostDetailsComponent = () => {
       toast.error("You need to login to perform this action");
     }
   };
-
+  
   const handleSaveChanges = async () => {
     if (!id) return;
     if (!editedTitle.trim() || !editedContent.trim()) {
@@ -213,25 +205,24 @@ const PostDetailsComponent = () => {
     }
   };
 
-  const handleCreateBranch = async (versionId: string) => {
-    const branchName = window.prompt("Enter a branch name");
+  const handleCreateBranch = async (versionId: string) => {const branchName = window.prompt("Enter a branch name");
 
-    if (!branchName?.trim()) {
-      return;
-    }
+  if (!branchName?.trim()) {
+    return;
+  }
 
-    try {
-      await createBranchVersion({ versionId, branchName, }).unwrap();
+  try {
+    await createBranchVersion({versionId, branchName,}).unwrap();
 
-      toast.success("Branch created successfully!");
-    } catch (error) {
-      console.error(error);
+    toast.success("Branch created successfully!");
+  } catch (error) {
+    console.error(error);
 
-      toast.error(
-        "Failed to create branch"
-      );
-    }
-  };
+    toast.error(
+      "Failed to create branch"
+    );
+  }
+};
 
   const hasUserReacted = post?.reactions?.some((r) => {
     const userId = r.userId;
@@ -247,7 +238,7 @@ const PostDetailsComponent = () => {
   const handleTwitterShare = () => {
     const currentUrl = window.location.href;
     const currentTitle = post?.title || "Check out this story!";
-    const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
+    const url = `https://x.com/intent/tweet?url=${encodeURIComponent(
       currentUrl
     )}&text=${encodeURIComponent(currentTitle)}`;
     window.open(url, "_blank", "noopener,noreferrer");
@@ -290,12 +281,22 @@ const PostDetailsComponent = () => {
       toast.error("Unable to remove this story. Please try again.");
     }
   };
+
   if (isLoading) {
     return <LoadingAnimation />;
   }
 
   return (
     <div className="min-h-screen bg-white text-slate-900 transition-colors duration-300 dark:bg-[#0b1329] dark:text-white relative">
+
+      {/* OG Meta Tags for social sharing */}
+      <StoryMetaTags
+        title={post?.title}
+        content={post?.content}
+        imageURL={post?.imageURL}
+        postId={id}
+      />
+
       {/* Reading Progress Bar */}
       <div
         className="fixed top-0 left-0 z-50 h-1 bg-indigo-500 transition-all duration-100"
@@ -322,14 +323,29 @@ const PostDetailsComponent = () => {
           <div className="p-8">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center space-x-4">
-                <SSProfile
-                  name={post?.author?.name || "Unknown User"}
-                  size="h-12 w-12"
-                />
+                {post?.author?._id ? (
+                  <Link to={`/profile/${post.author._id}`} className="flex items-center shrink-0 hover:opacity-85 transition">
+                    <SSProfile
+                      name={post?.author?.name || "Unknown User"}
+                      size="h-12 w-12"
+                    />
+                  </Link>
+                ) : (
+                  <SSProfile
+                    name={post?.author?.name || "Unknown User"}
+                    size="h-12 w-12"
+                  />
+                )}
 
                 <div>
                   <h3 className="font-medium text-slate-700 dark:text-gray-400">
-                    {post?.author?.name || "Unknown User"}
+                    {post?.author?._id ? (
+                      <Link to={`/profile/${post.author._id}`} className="hover:text-indigo-650 dark:hover:text-indigo-400 transition">
+                        {post?.author?.name || "Unknown User"}
+                      </Link>
+                    ) : (
+                      post?.author?.name || "Unknown User"
+                    )}
                   </h3>
 
                   <div className="flex items-center text-sm text-slate-500 dark:text-gray-500">
@@ -351,10 +367,11 @@ const PostDetailsComponent = () => {
                 {currentUser && !isOwner && (
                   <button
                     onClick={handleFollow}
-                    className={`rounded px-4 py-1 text-sm cursor-pointer transition-all ${isFollowing
+                    className={`rounded px-4 py-1 text-sm cursor-pointer transition-all ${
+                      isFollowing
                         ? "bg-blue-500/50 text-white hover:bg-red-500/30"
                         : "bg-blue-500/30 text-slate-900 dark:text-gray-300 hover:bg-blue-500/40"
-                      }`}
+                    }`}
                   >
                     {isFollowing ? "Following" : "Follow"}
                   </button>
@@ -386,12 +403,6 @@ const PostDetailsComponent = () => {
                   className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:opacity-90 rounded-lg transition-all active:scale-95 cursor-pointer font-semibold shadow-md"
                 >
                   📊 Compare Variations
-                </button>
-                <button
-                  onClick={() => setShowContinueModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gradient-to-r from-teal-500 to-emerald-600 text-white hover:opacity-90 rounded-lg transition-all active:scale-95 cursor-pointer font-semibold shadow-md"
-                >
-                  ✦ Continue Story
                 </button>
               </div>
             )}
@@ -477,10 +488,11 @@ const PostDetailsComponent = () => {
               <div className="flex items-center space-x-6">
                 <button
                   onClick={handleLike}
-                  className={`flex items-center space-x-2 transition-colors cursor-pointer ${hasUserReacted
+                  className={`flex items-center space-x-2 transition-colors cursor-pointer ${
+                    hasUserReacted
                       ? "text-red-500 hover:text-red-400"
                       : "text-slate-600 hover:text-slate-900 dark:text-gray-600 dark:hover:text-gray-400"
-                    }`}
+                  }`}
                 >
                   <i
                     className={`${hasUserReacted ? "fas" : "far"} fa-heart`}
@@ -496,37 +508,15 @@ const PostDetailsComponent = () => {
                   />
                 )}
               </div>
-
-              <div className="flex items-center space-x-3 bg-slate-800/40 backdrop-blur-md px-4 py-2 rounded-full border border-slate-700/50 shadow-sm">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 mr-1 select-none">
-                  Share:
-                </span>
-
-                <button
-                  id="share-twitter-btn"
-                  onClick={handleTwitterShare}
-                  className="w-9 h-9 rounded-full bg-slate-700 border border-slate-600 hover:bg-slate-600 hover:border-blue-400 text-white flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
-                  aria-label="Share on X"
-                >
-                  <FaXTwitter className="text-sm" />
+              <div className="flex items-center space-x-4">
+                <button className="text-gray-600 hover:text-custom">
+                  <i className="fab fa-twitter"></i>
                 </button>
-
-                <button
-                  id="share-linkedin-btn"
-                  onClick={handleLinkedInShare}
-                  className="w-9 h-9 rounded-full bg-slate-700 border border-slate-600 hover:bg-slate-600 hover:border-blue-400 text-white flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
-                  aria-label="Share on LinkedIn"
-                >
-                  <i className="fab fa-linkedin text-sm"></i>
+                <button className="text-gray-600 hover:text-custom">
+                  <i className="fab fa-linkedin"></i>
                 </button>
-
-                <button
-                  id="share-email-btn"
-                  onClick={handleEmailShare}
-                  className="w-9 h-9 rounded-full bg-slate-700 border border-slate-600 hover:bg-slate-600 hover:border-blue-400 text-white flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer shadow-sm"
-                  aria-label="Share via Email"
-                >
-                  <i className="far fa-envelope text-sm"></i>
+                <button className="text-gray-600 hover:text-custom">
+                  <i className="far fa-envelope"></i>
                 </button>
               </div>
             </div>
@@ -538,24 +528,29 @@ const PostDetailsComponent = () => {
             )}
 
             <div>
-              <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-gray-300">
-                Related Stories
-              </h3>
+  <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-gray-300">
+    Related Stories
+  </h3>
 
-              <RelatedStoriesComponent
-                posts={relatedPost || []}
-                currentPostId={post?._id || ""}
-              />
-            </div>
+  {relatedPost && relatedPost.length > 0 ? (
+    <RelatedStoriesComponent
+      posts={relatedPost}
+      currentPostId={post?._id || ""}
+    />
+  ) : (
+    <div className="text-center py-8 text-slate-500 dark:text-gray-400">
+      <p>No related stories found.</p>
+    </div>
+  )}
+</div>
           </div>
         </div>
       </div>
 
-      {/* Dynamic Slide-in Sliding Timeline Drawer Panel */}
       {showTimeline && (
         <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#0f172a]/95 backdrop-blur-xl border-l border-slate-700/60 shadow-2xl p-6 overflow-y-auto text-white animate-slide-in flex flex-col">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
-
+            
             <button
               onClick={() => setShowTimeline(false)}
               className="w-8 h-8 rounded-full bg-slate-850 border border-slate-750 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all cursor-pointer"
@@ -602,7 +597,6 @@ const PostDetailsComponent = () => {
 
                   return (
                     <div key={v._id} className="relative group">
-                      {/* Chronological marker dot */}
                       <div className="absolute left-[-21px] top-1.5 w-3.5 h-3.5 rounded-full bg-indigo-500 border-4 border-[#0f172a] group-hover:scale-125 transition-transform duration-200"></div>
                       <div className="bg-slate-900/55 border border-slate-800/80 rounded-xl p-4 hover:border-slate-700/80 transition-all duration-200">
                         <div className="flex justify-between items-start mb-2 gap-2">
@@ -624,9 +618,7 @@ const PostDetailsComponent = () => {
                             </button>
 
                             <button
-                              onClick={() =>
-                                handleCreateBranch(v._id)
-                              }
+                              onClick={() => handleCreateBranch(v._id)}
                               className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] rounded transition-all"
                             >
                               Branch
@@ -703,9 +695,7 @@ const PostDetailsComponent = () => {
 
                     {node.branchName && (
                       <div className="text-purple-400 text-sm">
-                        Branch:
-                        {" "}
-                        {node.branchName}
+                        Branch: {node.branchName}
                       </div>
                     )}
                   </div>
@@ -716,31 +706,14 @@ const PostDetailsComponent = () => {
         </div>
       )}
 
-      {showContinueModal && post && (
-        <ContinueStoryModal
-          story={{
-            title: post.title,
-            content: post.content,
-            language: post.language,
-          }}
-          onClose={() => setShowContinueModal(false)}
-          onApply={async (continuedContent) => {
-            try {
-              await updatePost({
-                id: id!,
-                data: {
-                  title: post.title,
-                  content: continuedContent,
-                  generationType: "regenerated",
-                },
-              }).unwrap();
-              toast.success("Story continued successfully!");
-            } catch (err) {
-              console.error(err);
-              toast.error("Failed to save continued story.");
-            }
-          }}
-        />
+      {showComparison && (
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-white dark:bg-[#0f172a]/95 backdrop-blur-xl border-l border-slate-200 dark:border-slate-700/60 shadow-2xl p-6 overflow-y-auto text-slate-900 dark:text-white animate-slide-in flex flex-col">
+          <ComparisonMode
+            versions={versions || []}
+            isLoadingVersions={isLoadingVersions}
+            onClose={() => setShowComparison(false)}
+          />
+        </div>
       )}
 
       <div className="absolute top-[-200px] left-[250px] w-[800px] h-[350px] bg-blue-500/20 rounded-full blur-3xl -z-10 pointer-events-none"></div>
@@ -749,4 +722,3 @@ const PostDetailsComponent = () => {
 };
 
 export default PostDetailsComponent;
-
