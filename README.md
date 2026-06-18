@@ -547,7 +547,7 @@ Contributions make the open source community such an amazing place to learn, ins
 Thanks to everyone who has helped build **Story Spark AI**. This grid updates automatically from [GitHub contributors](https://github.com/ronisarkarexe/story-spark-ai/graphs/contributors).
 
 <a href="https://github.com/ronisarkarexe/story-spark-ai/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ronisarkarexe/story-spark-ai&max=500&columns=12" alt="Contributors" />
+  <img src="https://contrib.rocks/image?repo=ronisarkarexe/story-spark-ai&max=1000&columns=16" alt="Contributors" />
 </a>
 
 ## Maintainers
