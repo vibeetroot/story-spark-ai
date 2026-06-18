@@ -477,6 +477,7 @@ const otpPayload = {
                   validation={{
                     required: "Please enter OTP",
                     minLength: { value: 6, message: "OTP must be 6 digits" },
+                      setValueAs: (value: string) => value.replace(/\D/g, ""),
                     maxLength: { value: 6, message: "OTP must be 6 digits" },
                     pattern: { value: /^[0-9]{6}$/, message: "OTP must contain only numbers" },
                   }}
